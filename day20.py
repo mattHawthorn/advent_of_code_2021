@@ -19,7 +19,7 @@ def enhance(lookup: Lookup, image: Image, fill: bool = False) -> Tuple[Image, bo
     return new_image, new_fill
 
 
-def enhance_n(lookup: Lookup, image: Image, n: int, fill: bool = False, trim: bool = False) -> Tuple[Image, bool]:
+def enhance_n(lookup: Lookup, image: Image, n: int, fill: bool = False, trim: bool = False) -> Image:
     def enhance_(im_fill):
         return enhance(lookup, *im_fill)
 
@@ -81,6 +81,10 @@ def to_binary(s: str):
     return list(map(PIXEL_VALUES.__getitem__, s))
 
 
+def to_str(image: Image) -> str:
+    return "\n".join("".join(".#"[i] for i in row) for row in image)
+
+
 def test():
     import io
 
@@ -130,8 +134,6 @@ def test():
     ...............
     ...............
     ...............""".splitlines())[3:-3, 3:-3]
-    def to_str(a):
-        return "\n".join("".join(".#"[i] for i in row) for row in a)
 
     enhanced, _ = enhance(lookup, image)
     enhanced2 = enhance_n(lookup, image, 2, trim=False)
@@ -150,10 +152,10 @@ if __name__ == "__main__":
 
     # Part 1
 
-    enhanced = enhance_n(lookup, image, 2)
-    print(np.sum(enhanced))
+    enhanced2 = enhance_n(lookup, image, 2)
+    print(np.sum(enhanced2))
 
     # Part 2
 
-    enhanced = enhance_n(lookup, image, 50)
-    print(np.sum(enhanced))
+    enhanced50 = enhance_n(lookup, image, 50)
+    print(np.sum(enhanced50))
