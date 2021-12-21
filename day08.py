@@ -46,9 +46,7 @@ Output = Sequence[Subset]
 def solve(sets: Input, observed_sets: Input) -> Iterator[Solution]:
     sets_by_len = group_by_len(sets)
     search_path = efficient_path(observed_sets, sets_by_len)
-    return solve_from_search_path(
-        search_path, sets, observed_sets, sets_by_len
-    )
+    return solve_from_search_path(search_path, sets, observed_sets, sets_by_len)
 
 
 def solve_from_search_path(
@@ -61,9 +59,7 @@ def solve_from_search_path(
     compatible = partial(is_compatible, sets, observed_sets)
     if sets_by_len is None:
         sets_by_len = group_by_len(observed_sets)
-    candidate_solutions = map(
-        dict, candidate_mappings(search_path, sets_by_len)
-    )
+    candidate_solutions = map(dict, candidate_mappings(search_path, sets_by_len))
     return filter(compatible, candidate_solutions)
 
 
@@ -119,7 +115,9 @@ def extended_candidate_mappings(
     targets = og_set.difference(base_mapping.values())
     # can only extend the mapping using this pair of sets if doing so would still result in a bijection
     if len(unmapped) == len(targets):
-        if len(unmapped) == 0:  # no new elements to map, but the current mapping checks out
+        if (
+            len(unmapped) == 0
+        ):  # no new elements to map, but the current mapping checks out
             yield base_mapping
         for perm in permutations(targets):
             yield ChainMap(base_mapping, dict(zip(unmapped, perm)))
@@ -151,7 +149,11 @@ def efficient_path(
         # to the unmapped elements of U
         new_elts = len(s.difference(covered))
         c = factorial(new_elts)
-        return c * len(observed_sets_by_len[len(s)]) if observed_sets_by_len is not None else c
+        return (
+            c * len(observed_sets_by_len[len(s)])
+            if observed_sets_by_len is not None
+            else c
+        )
 
     while len(covered) < universe_size:
         smallest_diff = min(sets, key=cost_fn)
@@ -190,7 +192,13 @@ def test():
         test_one(universe_size, num_sets, min_size, max_size, 0.8)
 
 
-def test_one(universe_size: int, num_sets: int, min_set_size: int, max_set_size: int, subset_proportion: float):
+def test_one(
+    universe_size: int,
+    num_sets: int,
+    min_set_size: int,
+    max_set_size: int,
+    subset_proportion: float,
+):
     from random import choice, random, sample
     import time
 
