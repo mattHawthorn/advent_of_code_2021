@@ -10,7 +10,11 @@ State = TypeVar("State")
 F, D, U = "forward", "down", "up"
 
 
-def navigate(instructions: Iterable[Instruction], move: Callable[[State, Instruction], State], start: State) -> State:
+def navigate(
+    instructions: Iterable[Instruction],
+    move: Callable[[State, Instruction], State],
+    start: State,
+) -> State:
     return reduce(move, instructions, start)
 
 
@@ -34,6 +38,7 @@ def move_aimed(state: State, instruction: Instruction) -> State:
 
 
 # Input parsing
+
 
 def parse_instruction(s: str) -> Instruction:
     direction, magnitude = s.strip().split()

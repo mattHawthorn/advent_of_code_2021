@@ -19,7 +19,9 @@ def enhance(lookup: Lookup, image: Image, fill: bool = False) -> Tuple[Image, bo
     return new_image, new_fill
 
 
-def enhance_n(lookup: Lookup, image: Image, n: int, fill: bool = False, trim: bool = False) -> Image:
+def enhance_n(
+    lookup: Lookup, image: Image, n: int, fill: bool = False, trim: bool = False
+) -> Image:
     def enhance_(im_fill):
         return enhance(lookup, *im_fill)
 
@@ -31,7 +33,9 @@ def enhance_n(lookup: Lookup, image: Image, n: int, fill: bool = False, trim: bo
         return new_image
 
 
-def convolve(neighborhood: np.ndarray, image: Image, fill: bool = False) -> Tuple[np.ndarray, int]:
+def convolve(
+    neighborhood: np.ndarray, image: Image, fill: bool = False
+) -> Tuple[np.ndarray, int]:
     assert neighborhood.shape[0] == neighborhood.shape[1]
     size = neighborhood.shape[0]
     half_size = size // 2
@@ -40,10 +44,11 @@ def convolve(neighborhood: np.ndarray, image: Image, fill: bool = False) -> Tupl
     padded_image = padded(image, size - 1, fill)
     # the convolved image is then smaller on all sides by `half_size`
     new_image = np.empty(
-        (padded_image.shape[0] - 2 * half_size, padded_image.shape[1] - 2 * half_size), dtype=int
+        (padded_image.shape[0] - 2 * half_size, padded_image.shape[1] - 2 * half_size),
+        dtype=int,
     )
     for i, j in product(range(new_image.shape[0]), range(new_image.shape[1])):
-        swatch = padded_image[i:i+size, j:j+size]
+        swatch = padded_image[i : i + size, j : j + size]
         new_image[i, j] = (swatch * neighborhood).sum()
 
     new_fill = (neighborhood * np.full(neighborhood.shape, fill)).sum()
@@ -51,7 +56,9 @@ def convolve(neighborhood: np.ndarray, image: Image, fill: bool = False) -> Tupl
 
 
 def padded(image: np.ndarray, size: int, fill: bool = False) -> np.ndarray:
-    padded_image = np.empty((image.shape[0] + 2 * size, image.shape[1] + 2 * size), dtype=image.dtype)
+    padded_image = np.empty(
+        (image.shape[0] + 2 * size, image.shape[1] + 2 * size), dtype=image.dtype
+    )
     for ix in range(size):
         padded_image[ix, :] = fill
         padded_image[-ix - 1, :] = fill
@@ -68,7 +75,9 @@ PIXEL_VALUES = {".": False, "#": True}
 
 
 def parse_input(f: IO) -> Tuple[Lookup, Image]:
-    lookup_rows = list(chain.from_iterable(map(to_binary, iter(lambda: f.readline().strip(), ""))))
+    lookup_rows = list(
+        chain.from_iterable(map(to_binary, iter(lambda: f.readline().strip(), "")))
+    )
     return np.array(lookup_rows, dtype=bool), parse_image(f)
 
 
@@ -90,7 +99,8 @@ def test():
 
     print("running tests")
 
-    f = io.StringIO("""..#.#..#####.#.#.#.###.##.....###.##.#..###.####..#####..#....#..#..##..##
+    f = io.StringIO(
+        """..#.#..#####.#.#.#.###.##.....###.##.#..###.####..#####..#....#..#..##..##
     #..######.###...####..#..#####..##..#.#####...##.#.#..#.##..#.#......#.###
     .######.###.####...#.##.##..#..#..#####.....#.#....###..#.##......#.....#.
     .#..#..##..#...##.######.####.####.#.#...#.......#..#.#.#...####.##.#.....
@@ -102,9 +112,11 @@ def test():
     #....
     ##..#
     ..#..
-    ..###""")
+    ..###"""
+    )
     lookup, image = parse_input(f)
-    expected = parse_image("""...............
+    expected = parse_image(
+        """...............
     ...............
     ...............
     ...............
@@ -118,8 +130,10 @@ def test():
     ...............
     ...............
     ...............
-    ...............""".splitlines())[4:-4, 4:-4]
-    expected2 = parse_image("""...............
+    ...............""".splitlines()
+    )[4:-4, 4:-4]
+    expected2 = parse_image(
+        """...............
     ...............
     ...............
     ..........#....
@@ -133,7 +147,8 @@ def test():
     .......###.....
     ...............
     ...............
-    ...............""".splitlines())[3:-3, 3:-3]
+    ...............""".splitlines()
+    )[3:-3, 3:-3]
 
     enhanced, _ = enhance(lookup, image)
     enhanced2 = enhance_n(lookup, image, 2, trim=False)
