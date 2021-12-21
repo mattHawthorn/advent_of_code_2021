@@ -1,4 +1,4 @@
-from functools import partial, reduce, singledispatch
+from functools import partial, reduce
 from itertools import chain
 from operator import mul, gt, lt, eq
 from typing import (
@@ -12,7 +12,6 @@ from typing import (
     Union,
 )
 
-Packet = ByteString
 Byte = int
 Version = int
 MessageType = int
@@ -21,29 +20,49 @@ Parser = Callable[["BitBufferView"], Tuple["Message", "BitBufferView"]]
 
 
 class Message:
-    pass
+    @property
+    def value(self) -> int:
+        raise NotImplementedError(type(self))
+
+    @property
+    def version_sum(self) -> int:
+        return 0
 
 
 class Reduce(NamedTuple, Message):
-    packets: List[Packet]
+    packets: List["Packet"]
     func: Callable[[Iterable[int]], int]
 
     @property
     def value(self) -> int:
         return self.func(p.value for p in self.packets)
 
+    @property
+    def version_sum(self) -> int:
+        return sum(p.version_sum for p in self.packets)
+
 
 class BinOp(NamedTuple, Message):
-    packets: List[Packet]
+    packets: List["Packet"]
     op: Callable[[int, int], int]
 
     @property
     def value(self) -> int:
         return self.op(self.packets[0].value, self.packets[1].value)
 
+    @property
+    def version_sum(self) -> int:
+        return sum(p.version_sum for p in self.packets)
 
-class Literal(NamedTuple, Message):
-    value: int
+
+class Literal(int, Message):
+    @property
+    def value(self):
+        return self
+
+    @property
+    def version_sum(self) -> int:
+        return 0
 
 
 class Packet(NamedTuple):
@@ -54,25 +73,13 @@ class Packet(NamedTuple):
     def value(self) -> int:
         return self.message.value
 
+    @property
+    def version_sum(self) -> int:
+        return self.version + self.message.version_sum
+
 
 def parse(packet_hex: str):
     return _parse_packet(BitBufferView(bytes.fromhex(packet_hex)))
-
-
-@singledispatch
-def version_sum(_) -> int:
-    return 0
-
-
-@version_sum.register(Packet)
-def version_sum_packet(packet: Packet) -> int:
-    return packet.version + version_sum(packet.message)
-
-
-@version_sum.register(Reduce)
-@version_sum.register(BinOp)
-def version_sum_op(op: Union[Reduce, BinOp]) -> int:
-    return sum(map(version_sum_packet, op.packets))
 
 
 def identity(x: T) -> T:
@@ -86,7 +93,7 @@ class BitBufferView:
 
     def read(
         self, n_bits: int, f: Callable[[bytes], T] = identity
-    ) -> Tuple[int, "BitBuffer"]:
+    ) -> Tuple[int, "BitBufferView"]:
         new_buffer = BitBufferView(self.data, self.offset + n_bits)
         bit_offset_start, bit_offset_end = self.offset, (self.offset + n_bits)
         byte_offset_start, trim_bits_left = divmod(bit_offset_start, 8)
@@ -185,11 +192,11 @@ def test():
     print("running tests")
     packet, buffer = parse("D2FE28")
     assert packet.version == 6
-    assert version_sum(packet) == 6
+    assert packet.version_sum == 6
     assert packet.value == 2021
 
     packet, buffer = parse("8A004A801A8002F478")
-    assert version_sum(packet) == 16
+    assert packet.version_sum == 16
 
     packet, buffer = parse("9C0141080250320F1802104A08")
     assert packet.value == 1
@@ -207,7 +214,7 @@ if __name__ == "__main__":
     # Part 1
 
     packet, buffer = parse(hex_)
-    print(version_sum(packet))
+    print(packet.version_sum)
 
     # Part 2
 
