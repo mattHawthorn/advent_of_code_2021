@@ -22,6 +22,7 @@ from typing import (
 # Universe U of items (e.g. the 7 segments)
 # Set of subsets of U: S (e.g. the sets of segments used by each digit)
 # Set of subsets of U: Sₚ (e.g. the sets of segments used by each digit in the scrambled output)
+# (Note: Sₚ may be smaller than S)
 #
 # Find the permutation(s) p of U such that ∀ s ∈ Sₚ: p(s) ∈ S
 #
@@ -43,10 +44,10 @@ Output = Sequence[Subset]
 
 
 def solve(sets: Input, observed_sets: Input) -> Iterator[Solution]:
-    observed_sets_by_len = group_by_len(observed_sets)
-    search_path = efficient_path(sets, observed_sets_by_len)
+    sets_by_len = group_by_len(sets)
+    search_path = efficient_path(observed_sets, sets_by_len)
     return solve_from_search_path(
-        search_path, sets, observed_sets, observed_sets_by_len
+        search_path, sets, observed_sets, sets_by_len
     )
 
 
@@ -54,14 +55,14 @@ def solve_from_search_path(
     search_path: Sequence[Subset],
     sets: Input,
     observed_sets: Input,
-    observed_sets_by_len: Optional[SubsetsByLen] = None,
+    sets_by_len: Optional[SubsetsByLen] = None,
 ) -> Iterator[Solution]:
     # every set on the search path is compatibly mapped by construction, but we need to check the rest
     compatible = partial(is_compatible, sets, observed_sets)
-    if observed_sets_by_len is None:
-        observed_sets_by_len = group_by_len(observed_sets)
+    if sets_by_len is None:
+        sets_by_len = group_by_len(observed_sets)
     candidate_solutions = map(
-        dict, candidate_mappings(search_path, observed_sets_by_len)
+        dict, candidate_mappings(search_path, sets_by_len)
     )
     return filter(compatible, candidate_solutions)
 
@@ -85,17 +86,17 @@ def group_by_len(sets: Iterable[Subset]) -> SubsetsByLen:
 
 
 def candidate_mappings(
-    search_path: Iterable[Subset], observed_sets_by_len: SubsetsByLen
+    search_path: Iterable[Subset], sets_by_len: SubsetsByLen
 ) -> Iterator[Solution]:
-    def search(candidate_mappings, og_set):
+    def search(candidate_mappings, observed_set):
         # search of all possible mappings extending the current one by way of completing
         # the mapping to a particular observed set
-        candidate_sets = observed_sets_by_len[len(og_set)]
+        candidate_sets = sets_by_len[len(observed_set)]
 
         def extend_search(candidate_mapping):
             return chain.from_iterable(
                 extended_candidate_mappings(og_set, observed_set, candidate_mapping)
-                for observed_set in candidate_sets
+                for og_set in candidate_sets
             )
 
         return chain.from_iterable(map(extend_search, candidate_mappings))
@@ -118,6 +119,8 @@ def extended_candidate_mappings(
     targets = og_set.difference(base_mapping.values())
     # can only extend the mapping using this pair of sets if doing so would still result in a bijection
     if len(unmapped) == len(targets):
+        if len(unmapped) == 0:  # no new elements to map, but the current mapping checks out
+            yield base_mapping
         for perm in permutations(targets):
             yield ChainMap(base_mapping, dict(zip(unmapped, perm)))
 
@@ -175,8 +178,6 @@ def parse_line(line: str) -> Tuple[Input, Output]:
 
 
 def test():
-    import time
-
     print("running tests")
     for universe_size, num_sets, min_size, max_size in [
         (10, 20, 2, 10),
@@ -187,14 +188,12 @@ def test():
             f"Universe size: {universe_size}, num sets: {num_sets}, "
             f"min size: {min_size}, max size: {max_size}"
         )
-        tic = time.time()
-        test_one(universe_size, num_sets, min_size, max_size)
-        toc = time.time()
-        print(f"{toc - tic:2.3f}s runtime")
+        test_one(universe_size, num_sets, min_size, max_size, 0.8)
 
 
-def test_one(universe_size: int, num_sets: int, min_set_size: int, max_set_size: int):
-    from random import sample, choice
+def test_one(universe_size: int, num_sets: int, min_set_size: int, max_set_size: int, subset_proportion: float):
+    from random import choice, random, sample
+    import time
 
     # Generate universe U (characters
     universe = list(map(chr, range(universe_size)))
@@ -207,14 +206,26 @@ def test_one(universe_size: int, num_sets: int, min_set_size: int, max_set_size:
     # create mapping from U to int index in random order (generate permutation P)
     known_inverse_mapping = dict(enumerate(sample(universe, len(universe))))
     mapping = dict(map(reversed, known_inverse_mapping.items()))
+    mapped_subsets = list(translate_sets(subsets, mapping))
     # translate original sets to new space of ints
-    observed_sets = set(translate_sets(subsets, mapping))
+    while True:
+        # take a proper subset of the original subsets
+        observed_sets = set(s for s in mapped_subsets if random() < subset_proportion)
+        if len(set(chain.from_iterable(observed_sets))) == len(universe):
+            break
+    print(
+        f"Observed set sizes ({len(observed_sets)} out of {len(subsets)}): "
+        f"{dict(sorted(Counter(map(len, subsets)).items()))}"
+    )
     # check that original mapping recovers original sets
-    assert set(translate_sets(observed_sets, known_inverse_mapping)) == subsets
+    assert set(translate_sets(observed_sets, known_inverse_mapping)).issubset(subsets)
     # property-based test: translation of scrambled sets by solution mapping should equal original sets
+    tic = time.time()
     solutions = solve(subsets, observed_sets)
     other_inverse_mapping = next(solutions)
-    assert set(translate_sets(observed_sets, other_inverse_mapping)) == subsets
+    toc = time.time()
+    print(f"{toc - tic:2.3f}s runtime")
+    assert set(translate_sets(observed_sets, other_inverse_mapping)).issubset(subsets)
 
 
 if __name__ == "__main__":
