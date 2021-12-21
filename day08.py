@@ -155,7 +155,6 @@ def efficient_path(
 
     while len(covered) < universe_size:
         smallest_diff = min(sets, key=cost_fn)
-        print(f"new set of size {len(smallest_diff)} covers {len(smallest_diff.difference(covered))} new elements, with {len(observed_sets_by_len[len(smallest_diff)])} candidates to map to")
         sets.remove(smallest_diff)
         covered.update(smallest_diff)
         order.append(smallest_diff)
@@ -235,7 +234,7 @@ if __name__ == "__main__":
         test()
         exit(0)
 
-    with open("day8.txt") if sys.stdin.isatty() else sys.stdin as f:
+    with open("day08.txt") if sys.stdin.isatty() else sys.stdin as f:
         lines = list(map(parse_line, f))
 
     # Constants specific to the Advent of Code problem
