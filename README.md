@@ -3,4 +3,6 @@
 In these solutions I strive for elegance, generality, and efficiency, simultaneously if possible.
 Time-to-solution was not a metric I measured myself by, preferring aesthetics above all.
 
-![day 11 solution simulation](day11.gif)
+![day 11](day11.gif)
+
+<small>_visualization of simulation from day 11 solution_</small>
