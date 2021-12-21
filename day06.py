@@ -32,7 +32,7 @@ def simulate(population: Mapping[int, int], steps: int) -> Mapping[int, int]:
 if __name__ == "__main__":
     import sys
 
-    with open("day6.txt") if sys.stdin.isatty() else sys.stdin as f:
+    with open("day06.txt") if sys.stdin.isatty() else sys.stdin as f:
         counters = list(map(int, f.read().strip().split(",")))
         population = Counter(counters)
 

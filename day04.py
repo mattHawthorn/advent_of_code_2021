@@ -131,7 +131,7 @@ def parse_bingo(f):
 if __name__ == "__main__":
     import sys
 
-    with open("day4.txt") if sys.stdin.isatty() else sys.stdin as f:
+    with open("day04.txt") if sys.stdin.isatty() else sys.stdin as f:
         nums, boards = parse_bingo(f)
 
     # Part 1

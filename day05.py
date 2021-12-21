@@ -58,7 +58,7 @@ def parse_coord(s: str) -> Coord:
 if __name__ == "__main__":
     import sys
 
-    with open("day5.txt") if sys.stdin.isatty() else sys.stdin as f:
+    with open("day05.txt") if sys.stdin.isatty() else sys.stdin as f:
         lines = list(map(parse_line, iter(f.readline, "")))
 
     counts = coord_counts(filter(is_axis_aligned, lines))

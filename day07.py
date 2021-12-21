@@ -57,7 +57,7 @@ def min_move_cost_ternary_search(
 if __name__ == "__main__":
     import sys
 
-    with open("day7.txt") if sys.stdin.isatty() else sys.stdin as f:
+    with open("day07.txt") if sys.stdin.isatty() else sys.stdin as f:
         positions = list(map(int, f.read().strip().split(",")))
 
     # Part 1

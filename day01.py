@@ -17,7 +17,7 @@ def windowed(n: int, it: Iterable[T]) -> Iterable[Tuple[T, ...]]:
 if __name__ == "__main__":
     import sys
 
-    with open("day1.txt") if sys.stdin.isatty() else sys.stdin as f:
+    with open("day01.txt") if sys.stdin.isatty() else sys.stdin as f:
         nums = list(map(int, filter(bool, map(str.strip, f))))
 
     # Part 1

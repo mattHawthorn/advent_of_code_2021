@@ -68,7 +68,7 @@ max_by_count = partial(_min_or_max_by_count, max)
 if __name__ == "__main__":
     import sys
 
-    with open("day3.txt") if sys.stdin.isatty() else sys.stdin as f:
+    with open("day03.txt") if sys.stdin.isatty() else sys.stdin as f:
         lines = filter(bool, map(str.strip, f))
         seqs = list(map(list, map(partial(map, int), lines)))
         n_digits = len(seqs[0])

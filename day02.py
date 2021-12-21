@@ -48,7 +48,7 @@ def parse_instruction(s: str) -> Instruction:
 if __name__ == "__main__":
     import sys
 
-    with open("day2.txt") if sys.stdin.isatty() else sys.stdin as f:
+    with open("day02.txt") if sys.stdin.isatty() else sys.stdin as f:
         instructions = list(map(parse_instruction, filter(bool, map(str.strip, f))))
 
     # Part 1

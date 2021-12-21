@@ -117,7 +117,7 @@ def top_k(it: Iterable, k: int, key=lambda x: x) -> List:
 if __name__ == "__main__":
     import sys
 
-    with open("day9.txt") if sys.stdin.isatty() else sys.stdin as f:
+    with open("day09.txt") if sys.stdin.isatty() else sys.stdin as f:
         grid = [list(map(int, line.strip())) for line in f]
 
     from operator import add
