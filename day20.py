@@ -82,7 +82,7 @@ def to_binary(s: str):
 
 
 def to_str(image: Image) -> str:
-    return "\n".join("".join(".#"[i] for i in row) for row in image)
+    return "\n".join("".join(".#"[int(i)] for i in row) for row in image)
 
 
 def test():
@@ -147,6 +147,8 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         test()
 
+    verbose = "-v" in sys.argv or "--verbose" in sys.argv
+
     with open("day20.txt") if sys.stdin.isatty() else sys.stdin as f:
         lookup, image = parse_input(f)
 
@@ -154,8 +156,12 @@ if __name__ == "__main__":
 
     enhanced2 = enhance_n(lookup, image, 2)
     print(np.sum(enhanced2))
+    if verbose:
+        print(f"\n{to_str(enhanced2)}\n\n")
 
     # Part 2
 
     enhanced50 = enhance_n(lookup, image, 50)
     print(np.sum(enhanced50))
+    if verbose:
+        print(f"\n\n{to_str(enhanced50)}\n\n")

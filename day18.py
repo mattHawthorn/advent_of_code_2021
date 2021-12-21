@@ -223,7 +223,7 @@ if __name__ == "__main__":
         return eval(s)
 
     if len(sys.argv) > 1 and sys.argv[1] == "test":
-        test("verbose" in sys.argv or "-v" in sys.argv)
+        test("--verbose" in sys.argv or "-v" in sys.argv)
 
     with open("day18.txt") if sys.stdin.isatty() else sys.stdin as f:
         trees = list(map(parse, f))
