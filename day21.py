@@ -32,22 +32,9 @@ def play(
     return n_turns, [*states[-offset:], *states[:offset]]
 
 
-def iterate(f: Callable[[T], T], x: T) -> Iterable[T]:
-    return accumulate(repeat(f), lambda x, f: f(x), initial=x)
-
-
 def chunked(size: int, iterable: Iterable[T]) -> Iterable[List[T]]:
     it = iter(iterable)
     yield from iter(lambda: list(islice(it, size)), [])
-
-
-def windowed(n: int, it: Iterable[T]) -> Iterable[Tuple[T, ...]]:
-    iters = tee(it, n)
-    for i, it_ in enumerate(iters):
-        for _ in range(i):
-            next(it_)
-
-    return zip(*iters)
 
 
 def deterministic_dice(n_sides: int) -> Iterable[DiceRoll]:
