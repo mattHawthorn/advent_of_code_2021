@@ -116,36 +116,43 @@ def extended_candidate_mappings(
     unmapped = observed_set.difference(base_mapping.keys())
     # mappable targets
     targets = og_set.difference(base_mapping.values())
-    # can only extend the mapping using this pair of sets if
+    # can only extend the mapping using this pair of sets if doing so would still result in a bijection
     if len(unmapped) == len(targets):
         for perm in permutations(targets):
             yield ChainMap(base_mapping, dict(zip(unmapped, perm)))
 
 
 def efficient_path(
-    sets: Set[Subset], sets_by_len: Optional[Mapping[int, Set[Subset]]] = None
+    sets: Set[Subset], observed_sets_by_len: Optional[Mapping[int, Set[Subset]]] = None
 ) -> List[Subset]:
-    # find a sequence of sets, starting from the empty set,
-    # such that the cost of extending a permutation search by the new members of each new set is minimized,
-    # and all members of all sets are covered by at least one set in the sequence.
-    # This _could_ be a single shortest path algorithm, if we had a fixed target and destination.
-    # Instead, to find the global optimum would require all-pairs shortest paths, filtering to paths that
+    # find a sequence of sets, starting from the empty set, such that the cost of extending a
+    # permutation search by the new members of each new set is minimized, and all members of all sets
+    # are covered by at least one set in the sequence.
+    # This _could_ be a single shortest path algorithm, if we had a cost function that was purely a
+    # function of two subsets on an edge, e.g. the size of their difference. However, the change to the
+    # cost function of a path for adding a new set to a path is actually a function of the _whole_ path
+    # and the new set - namely a function of the size of the difference of the new set and the union of
+    # all earlier sets on the path.
+    #
+    # To find the global optimum would require all-pairs shortest paths, filtering to paths that
     # cover all set members, and then choosing the shortest (least cost) one.
-    # This would require e.g. the Floyd-Warshall algorithm which is O(V^3) (here V would be the number of sets)
     # For simplicity we choose a greedy algorithm here which is worst case O(V^2)
+    # (where V is the number of sets in this case)
     sets = sets.copy()
     order = []
     covered = set()
     universe_size = len(set(chain.from_iterable(sets)))
-    cost = 1
 
     def cost_fn(s):
-        c = factorial(len(s.difference(covered)))
-        return c * len(sets_by_len[len(s)]) if sets_by_len is not None else c
+        # for each observed set of the same length, we have to try to map the new elements
+        # to the unmapped elements of U
+        new_elts = len(s.difference(covered))
+        c = factorial(new_elts)
+        return c * len(observed_sets_by_len[len(s)]) if observed_sets_by_len is not None else c
 
     while len(covered) < universe_size:
         smallest_diff = min(sets, key=cost_fn)
-        cost *= cost_fn(smallest_diff)
+        print(f"new set of size {len(smallest_diff)} covers {len(smallest_diff.difference(covered))} new elements, with {len(observed_sets_by_len[len(smallest_diff)])} candidates to map to")
         sets.remove(smallest_diff)
         covered.update(smallest_diff)
         order.append(smallest_diff)
@@ -189,20 +196,20 @@ def test():
 def test_one(universe_size: int, num_sets: int, min_set_size: int, max_set_size: int):
     from random import sample, choice
 
-    # Generate universe U
-    universe = range(universe_size)
+    # Generate universe U (characters
+    universe = list(map(chr, range(universe_size)))
     # Generate subsets S
     sizes = range(min_set_size, max_set_size + 1)
     subsets = {frozenset(sample(universe, choice(sizes))) for _ in range(num_sets)}
     print(f"Sizes: {dict(sorted(Counter(map(len, subsets)).items()))}")
     # universe actually sampled from
-    universe_ = set(chain.from_iterable(subsets))
+    universe = set(chain.from_iterable(subsets))
     # create mapping from U to int index in random order (generate permutation P)
-    mapping = dict(enumerate(sample(universe_, len(universe_))))
+    known_inverse_mapping = dict(enumerate(sample(universe, len(universe))))
+    mapping = dict(map(reversed, known_inverse_mapping.items()))
     # translate original sets to new space of ints
     observed_sets = set(translate_sets(subsets, mapping))
     # check that original mapping recovers original sets
-    known_inverse_mapping = dict(map(reversed, mapping.items()))
     assert set(translate_sets(observed_sets, known_inverse_mapping)) == subsets
     # property-based test: translation of scrambled sets by solution mapping should equal original sets
     solutions = solve(subsets, observed_sets)
@@ -215,6 +222,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         test()
+        exit(0)
 
     with open("day8.txt") if sys.stdin.isatty() else sys.stdin as f:
         lines = list(map(parse_line, f))
