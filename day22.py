@@ -201,7 +201,6 @@ if __name__ == "__main__":
 
     with open("day22.txt") if sys.stdin.isatty() else sys.stdin as f:
         instructions = list(map(parse_instruction, filter(bool, map(str.strip, f))))
-        print(instructions[:10])
 
     # Part 1
 
