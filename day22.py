@@ -40,10 +40,9 @@ def final_state(instructions: Iterable[Instruction[Label]]) -> Dict[Label, int]:
         }
         graph[(step, (cuboid, label))] = neighbors
 
-        paths = all_paths(
-            graph, ((step, (cuboid, label)), cuboid), reducer=cuboid_intersection
-        )
-        for path, intersection in paths:
+        for path, intersection in all_paths(
+            graph, ((step, (cuboid, label)), cuboid), reducer=cuboid_intersection,
+        ):
             if intersection is not None:
                 size = cuboid_volume(intersection)
                 label2 = path[-1][1][1]
