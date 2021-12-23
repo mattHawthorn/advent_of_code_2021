@@ -121,14 +121,14 @@ def test():
     # Naive implementation
 
     class ReactorState:
-        def __init__(self, instructions: Iterable[Instruction[Label]]):
+        def __init__(self, instructions: Iterable[Instruction[Label]], dimension: int):
             self.instructions = list(instructions)
             self.cuboid: Cuboid = tuple(
                 (
                     min(c[i][0] for c, _ in self.instructions),
                     max(c[i][1] for c, _ in self.instructions),
                 )
-                for i in range(3)
+                for i in range(dimension)
             )
 
         def state_of(self, coord: Coord) -> Optional[Label]:
@@ -138,10 +138,11 @@ def test():
             last_cuboid, label = next(instructions, (None, None))
             return label
 
-        def __getitem__(self, label: Label) -> int:
-            return sum(
-                1 for coord in coords_in(self.cuboid) if self.state_of(coord) == label
-            )
+        def counts(self) -> Dict[Label, int]:
+            counts = defaultdict(int)
+            for coord in coords_in(self.cuboid):
+                counts[self.state_of(coord)] += 1
+            return counts
 
     def contains_coord(cuboid: Cuboid, coord: Coord) -> bool:
         return all(lo <= x and hi >= x for (lo, hi), x in zip(cuboid, coord))
@@ -150,7 +151,10 @@ def test():
         ranges = (range(lo, hi + 1) for lo, hi in cuboid)
         return product(*ranges)
 
+    from itertools import chain, combinations
+    from operator import itemgetter
     import random
+    import time
 
     def random_range(max_start: int, min_size: int, max_size: int) -> Range:
         lo = random.randint(0, max_start)
@@ -183,11 +187,36 @@ def test():
     print("running tests")
 
     bools = [True, False]
-    ints = [1, 2, 3]
-    for dimension, n_cuboids, labels in [(2, 20, bools), (2, 20, ints)]:
+    strings = ["a", "b", "c"]
+    for dimension, n_cuboids, labels in product([2, 3], [5, 10, 20], [bools, strings]):
         instructions = random_instructions(dimension, n_cuboids, labels)
+        overlaps2 = sum(
+            1
+            for (c1, _), (c2, _) in combinations(instructions, 2)
+            if cuboid_intersection(c1, c2)
+        )
+        overlaps3 = sum(
+            1
+            for (c1, _), (c2, _), (c3, _) in combinations(instructions, 3)
+            if reduce(cuboid_intersection, (c1, c2, c3))
+        )
+        lo = min(map(itemgetter(0), chain.from_iterable(c for c, _ in instructions)))
+        hi = max(map(itemgetter(0), chain.from_iterable(c for c, _ in instructions)))
+        print(
+            f"{n_cuboids} cuboids with {len(labels)} labels in {dimension} dimensions, "
+            f"coordinate ranges {lo}-{hi}, "
+            f"{overlaps2} pairwise overlaps, {overlaps3} 3-way overlaps"
+        )
+        tic = time.time()
         efficient = final_state(instructions)
-        naive = ReactorState(instructions)
+        efficient_time = time.time() - tic
+        print(f"Efficient solution: {efficient_time:2.3f}")
+
+        tic = time.time()
+        naive = ReactorState(instructions, dimension).counts()
+        naive_time = time.time() - tic
+        print(f"Naive solution: {naive_time:2.3f}")
+        print(f"Speedup: {naive_time / efficient_time:3.2f}")
 
         for label in labels:
             assert efficient[label] == naive[label]
