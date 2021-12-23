@@ -45,7 +45,7 @@ def final_state(instructions: Iterable[Instruction[Label]]) -> Dict[Label, int]:
         ):
             if intersection is not None:
                 size = cuboid_volume(intersection)
-                label2 = path[-1][1][1]
+                (_, (_, label2)) = path[-1]
                 # inclusion-exclusion
                 increment = ((-1) ** len(path)) * size
                 label_counts[label2] -= increment
