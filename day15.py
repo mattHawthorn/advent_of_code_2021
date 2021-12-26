@@ -37,7 +37,7 @@ def grid_to_graph(grid: Grid) -> WeightedGraph[T]:
     return graph
 
 
-def djikstra(graph: WeightedGraph[T], start: T, end: T) -> List[T]:
+def djikstra(graph: WeightedGraph[T], start: T, end: T) -> Tuple[List[T], int]:
     unvisited = set(graph)
     dists = dict(zip(graph, repeat(float("inf"))))
     dists[start] = 0
