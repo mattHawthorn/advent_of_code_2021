@@ -6,3 +6,7 @@ Time-to-solution was not a metric I measured myself by, preferring aesthetics ab
 ![day 11](day11.gif)
 
 <small>_visualization of simulation from day 11 solution_</small>
+
+![day 23](day23.gif)
+
+<small>_visualization of simulation from day 23 solution_</small>
