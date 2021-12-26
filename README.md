@@ -9,4 +9,4 @@ Time-to-solution was not a metric I measured myself by, preferring aesthetics ab
 
 ![day 23](day23.gif)
 
-<small>_visualization of solution from day 23 solution_</small>
+<small>_visualization of day 23 solution_</small>
