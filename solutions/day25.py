@@ -14,7 +14,7 @@ EASTER = ">"
 
 def step(state: State) -> State:
     grid, (easter_x, easter_y), (souther_x, souther_y), _ = state
-    new_grid = np.copy(grid)
+    new_grid = grid
 
     easter_x_new = (easter_x + 1) % grid.shape[1]
     discard_easters = new_grid[easter_y, easter_x_new] == EMPTY
@@ -57,6 +57,23 @@ def simulate(grid: Grid) -> Tuple[Grid, int]:
 
 def parse_array(f: Iterable[str]) -> Grid:
     return np.array(list(map(list, takewhile("".__ne__, map(str.rstrip, f)))))
+
+
+test_input = """v...>>.vv>
+.vv>>.vv..
+>>.>v>...v
+>>v>>.>.v.
+v>v.vv.v..
+>.>>..v...
+.vv..>.>v.
+v.v..>>v.v
+....v..v.>"""
+
+def test():
+    print("running tests")
+    grid = parse_array(test_input.splitlines())
+    final_grid, n_steps = simulate(grid)
+    assert n_steps == 58
 
 
 if __name__ == "__main__":
