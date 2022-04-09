@@ -204,11 +204,15 @@ def print_(*args, **kw):
 # Input parsing
 
 
+SPACE_PATTERN = r"([A-Z]|\.| )"
+EMPTY_SPACE_CHARS = (".", " ")
+
+
 def parse_input(f: Iterable[str]) -> Tuple[QueueNetwork, Dict[str, int]]:
     lines = enumerate(map(str.rstrip, f))
     hallway = ""
     hallway_bottom = ""
-    for pattern in [r"#+", r"#([A-Z]|\.)+#", r"#+(([A-Z]|\.)#)+##*"]:
+    for pattern in [r"#+", rf"#{SPACE_PATTERN}+#", rf"#+({SPACE_PATTERN}#)+##*"]:
         line_no, line = next(lines)
         match = re.fullmatch(pattern, line)
         assert match, f"parse error line {line_no}; expected {pattern!r}"
@@ -221,23 +225,23 @@ def parse_input(f: Iterable[str]) -> Tuple[QueueNetwork, Dict[str, int]]:
         hallway_bottom
     ), f"parse error line 2; length mismatch with line 1"
     queue_ixs = [i for i, c in enumerate(hallway_bottom) if c != "#"]
-    assert not any(
-        hallway[i] != "." for i in queue_ixs
+    assert all(
+        hallway[i] in EMPTY_SPACE_CHARS for i in queue_ixs
     ), f"parse error line 1; no characters allowed in spaces above rooms"
 
     left_q_len = queue_ixs[0] - 1
     right_q_len = len(hallway) - queue_ixs[-1] - 2
     middle = "".join(
-        "#" * (ix2 - ix1 - 1) + r"([A-Z]|\.)"
+        "#" * (ix2 - ix1 - 1) + SPACE_PATTERN
         for ix1, ix2 in zip(queue_ixs[:-1], queue_ixs[1:])
     )
-    row_pattern = fr"{'(?: |#)' * left_q_len}#([A-Z]|\.){middle}#+"
+    row_pattern = fr"{'(?: |#)' * left_q_len}#{SPACE_PATTERN}{middle}#+"
     end_pattern = (
         fr"{'(?: |#)' * left_q_len}{'#' * (len(hallway) - left_q_len - right_q_len)}#*"
     )
 
     room_queues = [
-        [None if hallway_bottom[i] == "." else hallway_bottom[i]] for i in queue_ixs
+        [None if hallway_bottom[i] in EMPTY_SPACE_CHARS else hallway_bottom[i]] for i in queue_ixs
     ]
     frozen = [False] * len(room_queues)
     for line_no, line in lines:
@@ -251,7 +255,7 @@ def parse_input(f: Iterable[str]) -> Tuple[QueueNetwork, Dict[str, int]]:
                 frozen[i] = True
             else:
                 assert not fr, f"broken column, {elt!r} in column {i}, line {line_no}"
-                q.append(None if elt == "." else elt)
+                q.append(None if elt in EMPTY_SPACE_CHARS else elt)
 
     room_queues = list(map(list, map(reversed, room_queues)))
 
@@ -277,15 +281,15 @@ def parse_input(f: Iterable[str]) -> Tuple[QueueNetwork, Dict[str, int]]:
     for i in range(n_queues):
         # rooms are odd
         if i == 0:
-            q = [None if c == "." else c for c in hallway[1 : left_q_len + 1]]
+            q = [None if c in EMPTY_SPACE_CHARS else c for c in hallway[1 : left_q_len + 1]]
         elif i == n_queues - 1:
-            q = [None if c == "." else c for c in hallway[-2 : -right_q_len - 2 : -1]]
+            q = [None if c in EMPTY_SPACE_CHARS else c for c in hallway[-2 : -right_q_len - 2 : -1]]
         elif i % 2 == 1:
             q = room_queues[(i - 1) // 2]
         # hallway ends and stopping-places between room are odd
         else:
             c = hallway[queue_ixs[(i - 1) // 2] + 1]
-            q = [None if c == "." else c]
+            q = [None if c in EMPTY_SPACE_CHARS else c]
 
         queues.append(q)
         edges_to_left = zip(
@@ -314,13 +318,14 @@ def parse_input(f: Iterable[str]) -> Tuple[QueueNetwork, Dict[str, int]]:
 
 
 def tostr(state: QueueNetwork) -> str:
+    space_char = EMPTY_SPACE_CHARS[0]
     width = len(state.queues) + len(state.queues[0]) + len(state.queues[-1])
     lines = ["#" * width]
-    middle = ".".join("." if q[0] is None else q[0] for q in state.queues[2:-1:2])
+    middle = ".".join(space_char if q[0] is None else q[0] for q in state.queues[2:-1:2])
     hall = (
-        f"#{''.join('.' if c is None else c for c in state.queues[0])}"
+        f"#{''.join(space_char if c is None else c for c in state.queues[0])}"
         f".{middle}."
-        f"{''.join('.' if c is None else c for c in reversed(state.queues[-1]))}#"
+        f"{''.join(space_char if c is None else c for c in reversed(state.queues[-1]))}#"
     )
     lines.append(hall)
     otherlines = []
@@ -332,7 +337,7 @@ def tostr(state: QueueNetwork) -> str:
             l, r = " " * len(state.queues[0]) + "#", "#" + " " * len(state.queues[-1])
 
         middle = "#".join(
-            (q[i] or ".") if len(q) > i else "." for q in state.queues[1:-1:2]
+            (q[i] or space_char) if len(q) > i else space_char for q in state.queues[1:-1:2]
         )
         otherlines.append(f"{l}{middle}{r}")
 
@@ -362,6 +367,7 @@ def animate(
         "#bcbd22",
         "#17becf",
     ],
+    loop: bool = False,
 ):
     import numpy as np
     from PIL import Image
@@ -385,29 +391,30 @@ def animate(
             (w * block_size, h * block_size), Image.BOX
         )
 
-    def to_gif(ims: List[Image.Image]):
+    def to_gif(ims: List[Image.Image], **extra):
         ims[0].save(
             filename,
             format="GIF",
             append_images=ims[1:],
             save_all=True,
             duration=frame_duration_ms,
-            loop=0,
+            **extra,
         )
 
     color_lookup = {
         chr(i): fromhex(color)
         for i, color in zip(range(ord("A"), ord("Z") + 1), colors)
     }
-    color_lookup[" "] = fromhex(bg_color)
-    color_lookup["."] = fromhex(bg_color)
+    color_lookup[EMPTY_SPACE_CHARS[0]] = fromhex(bg_color)
+    color_lookup[EMPTY_SPACE_CHARS[1]] = fromhex(bg_color)
     color_lookup["#"] = fromhex(wall_color)
 
     ims = list(map(to_image, path))
     print(
         f"Writing {frame_duration_ms * len(ims) / 1000:3.2f}s GIF with {len(ims):d} frames to {filename}"
     )
-    to_gif(ims)
+    extra = dict(loop=0) if loop else {}
+    to_gif(ims, **extra)
 
 
 # Problem-specific helpers
