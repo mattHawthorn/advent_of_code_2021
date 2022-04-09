@@ -10,3 +10,5 @@ Time-to-solution was not a metric I measured myself by, preferring aesthetics ab
 ![day 23](day23.gif)
 
 <small>_visualization of day 23 solution_</small>
+
+*Note: all solutions should run in a python 3.8+ interpeter; older versions are not guaranteed to work*
